@@ -8,7 +8,7 @@
 
 int DA;  // indicates if deadlocks will be avoided or not
 int N;   // number of processes
-int M;   // number of resource typesasdasd
+int M;   // number of resource types
 int ExistingRes[MAXR]; // Existing resources vector
 //..... other definitions/variables .....
 //.....
@@ -16,7 +16,8 @@ int ExistingRes[MAXR]; // Existing resources vector
 
 int AvailableRes[MAXR];
 int RequestRes[MAXP][MAXR];
-long tids[MAXP];
+//int yaptım
+int tids[MAXP];
 int MaxDemands[MAXP][MAXR];
 int Allocation[MAXP][MAXR];
 int Need[MAXP][MAXR];
@@ -29,7 +30,7 @@ int rm_thread_started(int tid)
 {
     tids[tid]=pthread_self();
     printf("Thread with tid %d became alive\n", tid) ;
-   
+
     return 0;
 }
 
@@ -43,7 +44,7 @@ int rm_thread_ended()
 
 int rm_claim (int claim[])
 {   
-    int this_tid;
+    int this_tid=0;
     for(int i = 0 ;i < N ; i++){
         if(tids[i] == pthread_self()){
             this_tid = tids[i];
@@ -74,9 +75,7 @@ int rm_init(int p_count, int r_count, int r_exist[],  int avoid)
         return -1;   
     
     pthread_mutex_init(&lock,NULL);
-    for(int i = 0 ; i < N; i ++){
-        pthread_cond_init(&conds[i], NULL);
-    }
+    
     DA = avoid;
     N = p_count;
     M = r_count;
@@ -92,7 +91,7 @@ int rm_init(int p_count, int r_count, int r_exist[],  int avoid)
 
 int rm_request (int request[])
 {   
-    for (int i = 0; i < MAXR; i++)
+     for (int i = 0; i < MAXR; i++)
     {
         if(request[i] < 0) {
             printf("Error: requested resources cannot be negative");
@@ -144,12 +143,13 @@ int rm_request (int request[])
     pthread_mutex_unlock(&lock);
 
     return 0;
+
 }
 
 
 int rm_release (int release[])
 {
-    int this_tid;
+    int this_tid=0;
     for(int i = 0 ;i < N ; i++){
         if(tids[i] == pthread_self()){
             this_tid = tids[i];
@@ -168,21 +168,111 @@ int rm_release (int release[])
         else{
             //threadlere sinyal at
             AvailableRes[i] += release[i];
-            printf("%d resources released\n" , release[i]);
-
+            printf("%d resources released\n" , release[i]);         
+            
+            
         }
 
     }
+
+    //need kadar available  olduysa sinyal at
+    for (int j = 0; j < N; j++)
+        pthread_cond_signal(&conds[j]);
+    
     pthread_mutex_unlock(&lock); 
     return 0;
 }
 
 
 int rm_detection()
-{
-    int ret = 0;
+{   
+    //available ile max demandi karşılaştır. eğer available herhangi bir thread için yeterli değilse deadlock.
+    //eğer available yeterliyse, o threadin max demandini topla available'a ekle. böylece devam et
     
-    return (ret);
+    int D = 0;
+    int tempR[MAXR];
+    int tempP[MAXP];
+    int tempPCopy[MAXP];
+
+    for (int j = 0; j < M; j++){
+        tempR[j] = AvailableRes[j];
+        tempP[j] = 0;
+        tempPCopy[j] = 0;
+    }
+    
+    /**
+    int isAllZero=0;
+    for (int i = 0; i < N; i++){  
+
+        for (int j = 0; j < M; j++){
+            if(RequestRes[i][j] == 0)
+                isAllZero++;                
+        }
+        if(isAllZero==M){tempP
+            for (int j = 0; j < M; j++)
+                tempR[j] += Allocation[i][j];
+
+            tempP[i]=1;          
+        }
+        isAllZero = 0;
+           
+    }*/
+    
+    
+    int isAllSatisfy=0;
+    int isSame=0;
+    
+    while(1){
+        //collect resources from threads that will eventually ends
+        for (int i = 0; i < N; i++){
+            if(tempP[i] == 0){
+
+                for (int j = 0; j < M; j++){
+                    if(RequestRes[i][j] <= tempR[j])   
+                        isAllSatisfy++;
+                }
+                if(isAllSatisfy== M){
+                    for (int j = 0; j < M; j++){
+                        tempR[j] +=Allocation[i][j];                        
+                    }
+                    tempP[i]=1;  
+                }
+                isAllSatisfy = 0;            
+            }
+        }
+
+        //check when to stop 
+        for(int i = 0 ; i < N; i++){
+            if(tempP[i] == tempPCopy[i]){                
+                isSame++;
+            }            
+        }
+
+        if(isSame == N){
+            break;
+        }
+
+        //update tempPCopy
+        for(int i = 0 ; i < N; i++){
+            tempPCopy[i] = tempP[i];
+        }
+
+        
+    }
+    
+    //Number of deadlocks
+    for (int i = 0; i < N; i++)
+    {
+        if(tempP[i] == 0 ){
+            printf("Deadlock Detected!");
+            D++;
+        }
+        else{
+            printf("There is no deadlock detected!");
+        }
+    }
+    
+    return D;
 }
 
 
@@ -191,28 +281,84 @@ void rm_print_state (char hmsg[])
     printf("***********************\n***%s***\n***********************\n",hmsg);
     printf("\nExist:\n");
     for (int i = 0; i < M; i++)    
-        printf("    R%d \n",i);
-    
-    for (int i = 0; i < M; i++)
-        printf("    %d  \n",ExistingRes[i]);
+        printf("    R%d ",i);
 
+    printf("\n");
+
+    for (int i = 0; i < M; i++)
+        printf("    %d  ",ExistingRes[i]);
+    printf("\n");
+
+    //-------------------------------------------------------------------
     printf("\nAvailable:\n");
     for (int i = 0; i < M; i++)    
-        printf("    R%d \n",i);
+        printf("    R%d ",i);
+
+    printf("\n");
+
     for (int i = 0; i < M; i++)
-        printf("    %d  \n",AvailableRes[i]);
+        printf("    %d  ",AvailableRes[i]);
+    printf("\n");
 
- 
+    //-------------------------------------------------------------------
+    printf("\nAllocation:\n");
+    for (int i = 0; i < M; i++)    
+        printf("    R%d",i);
 
+    printf("\n");
+
+    for (int i = 0; i < N; i++){
+        printf("T%d: ",i);
+        for (int j = 0; j < M; j++)
+            printf("%d      ",Allocation[i][j]);       
+        printf("\n");
+
+    }
+
+
+    //-------------------------------------------------------------------
+    printf("\nRequest:\n");
+    for (int i = 0; i < M; i++)    
+        printf("    R%d",i);
+
+    printf("\n");
+
+    for (int i = 0; i < N; i++){
+        printf("T%d: ",i);
+        for (int j = 0; j < M; j++)
+            printf("%d      ",RequestRes[i][j]);       
+        printf("\n");
+
+    }
+    //-------------------------------------------------------------------
     printf("\nMax Demand:\n");
     for (int i = 0; i < M; i++)    
-        printf("    R%d \n",i);
-    for (int i = 0; i < M; i++){
-        for (int j = 0; j < N; j++)
-            printf("T%d: %d  \n",j,MaxDemands[i][j]);        
-        
+        printf("    R%d",i);
+
+    printf("\n");
+
+    for (int i = 0; i < N; i++){
+        printf("T%d: ",i);
+        for (int j = 0; j < M; j++)
+            printf("%d      ",MaxDemands[i][j]);       
+        printf("\n");
+
     }
-        
+    //-------------------------------------------------------------------
+    printf("\nNeed:\n");
+    for (int i = 0; i < M; i++)    
+        printf("    R%d",i);
+
+    printf("\n");
+
+    for (int i = 0; i < N; i++){
+        printf("T%d: ",i);
+        for (int j = 0; j < M; j++)
+            printf("%d      ",Need[i][j]);       
+        printf("\n");
+
+    }
+    printf("\n***********************\n");
 
     return;
 }
