@@ -4,7 +4,7 @@
 #include "rm.h"
 
 
-// global variables
+// global variables a
 
 int DA;  // indicates if deadlocks will be avoided or not
 int N;   // number of processes
