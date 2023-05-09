@@ -8,7 +8,7 @@
 
 int DA;  // indicates if deadlocks will be avoided or not
 int N;   // number of processes
-int M;   // number of resource types
+int M;   // number of resource typesasdasd
 int ExistingRes[MAXR]; // Existing resources vector
 //..... other definitions/variables .....
 //.....
