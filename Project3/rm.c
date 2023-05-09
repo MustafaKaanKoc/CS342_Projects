@@ -92,6 +92,14 @@ int rm_init(int p_count, int r_count, int r_exist[],  int avoid)
 
 int rm_request (int request[])
 {   
+    for (int i = 0; i < MAXR; i++)
+    {
+        if(request[i] < 0) {
+            printf("Error: requested resources cannot be negative");
+            return -1;
+        }
+    }
+    
     int this_tid;
     for(int i = 0 ;i < N ; i++){
         if(tids[i] == pthread_self()){
@@ -99,34 +107,43 @@ int rm_request (int request[])
             break;
         }
     }
-    pthread_mutex_lock(&lock);
-    if(DA == 0){       
 
+    pthread_mutex_lock(&lock);
+
+    if (!DA) {       
         for(int i =0; i < M; i++){
             if(ExistingRes[i] < request[i]){
                 printf("Error: requested resources cannot be larger than existing resources");
                 pthread_mutex_unlock(&lock);
                 return -1;
             }
-            else{
-                RequestRes[this_tid][i]=request[i];
-                //condition variable ekle
-                AvailableRes[i] -= request[i]; 
-                //Allocation[this_tid][i]=;       
-                printf("%d resources requested\n" , request[i]);
-            }
-               
+        }
 
-        }    
+        for(int i = 0; i < M; i++)
+            RequestRes[this_tid][i]=request[i];
+
+        pthread_cond_wait(&conds[this_tid], &lock);
+
+        for(int i = 0; i < M; i++) {
+            AvailableRes[i] -= request[i]; 
+            Allocation[this_tid][i] = request[i];
+            printf("%d resources requested\n" , request[i]);
+        }
+                   
         pthread_mutex_unlock(&lock);
-        return 0;
     }
-    
-    else{
+    else {
+        for (int i = 0; i < M; i++) {
+            if (request[i] > MaxDemands[i][pthread_self()]) {
+                printf("Error: requested resources cannot be larger than max demands");
+                return -1;
+            }
+        }
         //deadlock avoidance varsa
     }
     pthread_mutex_unlock(&lock);
 
+    return 0;
 }
 
 
