@@ -6,11 +6,11 @@
 #include <stdarg.h>
 #include "rm.h"
 
-#define NUMR 1        // number of resource types
+#define NUMR 2    // number of resource types
 #define NUMP 2        // number of threads
 
 int AVOID = 1;
-int exist[1] =  {8};  // resources existing in the system
+int exist[2] =  {8, 8};  // resources existing in the system
 
 void pr (int tid, char astr[], int m, int r[])
 {
@@ -50,16 +50,19 @@ void *threadfunc1 (void *a)
     tid = *((int*)a);
     rm_thread_started (tid);
 
-    setarray(claim, NUMR, 8);
+    claim[0] = 5;
+    claim[1] = 6;
     rm_claim (claim);
     
-    setarray(request1, NUMR, 5);
+    request1[0] = 2;
+    request1[1] = 3;
     pr (tid, "REQ", NUMR, request1);
     rm_request (request1);
 
     sleep(4);
 
-    setarray(request2, NUMR, 3);
+    request2[0] = 3;
+    request2[1] = 3;
     pr (tid, "REQ", NUMR, request2);
     rm_request (request2);
 
@@ -81,16 +84,19 @@ void *threadfunc2 (void *a)
     tid = *((int*)a);
     rm_thread_started (tid);
 
-    setarray(claim, NUMR, 8);
+    claim[0] = 3;
+    claim[1] = 3;
     rm_claim (claim);
 
-    setarray(request1, NUMR, 2);
+    request1[0] = 1;
+    request1[1] = 1;
     pr (tid, "REQ", NUMR, request1);
     rm_request (request1);
 
     sleep(2);
     
-    setarray(request2, NUMR, 4);
+    request2[0] = 2;
+    request2[1] = 2;
     pr (tid, "REQ", NUMR, request2);
     rm_request (request2);
 

@@ -62,7 +62,7 @@ int rm_thread_ended()
         Need[this_tid][j] = 0;
         MaxDemands[this_tid][j] = 0;
     }
-
+    printf("Thread with tid %d ended\n", this_tid);
     return 0;
 }
 
@@ -139,176 +139,6 @@ int rm_init(int p_count, int r_count, int r_exist[],  int avoid)
 }
 
 
-// int rm_request(int request[])
-// {
-
-//     // Check if the request is valid
-//     for (int i = 0; i < MAXR; i++)
-//     {
-//         if (request[i] < 0)
-//         {
-//             printf("Error: requested resources cannot be negative");
-//             pthread_mutex_unlock(&lock); // release the lock before returning
-//             return -1;
-//         }
-//     }
-
-//     // Get the thread id of the current thread
-//     int this_tid = -1;
-//     for (int i = 0; i < N; i++)
-//     {
-//         if (tids[i] == pthread_self())
-//         {
-//             this_tid = i;
-//             break;
-//         }
-//     }
-
-//     pthread_mutex_lock(&lock); // acquire the lock before entering the critical section
-
-//     // Check if the system is in a deadlock avoidance mode
-//     if (DA)
-//     {       
-//         // Check if the requested resources are within the maximum demands of the process
-//         for (int i = 0; i < M; i++)
-//         {
-//             if (request[i] > MaxDemands[this_tid][i])
-//             {
-//                 printf("Error: requested resources cannot be larger than max demands");
-//                 pthread_mutex_unlock(&lock); // release the lock before returning
-//                 return -1;
-//             }
-//         }
-
-//         // Check if the request can be granted
-//         for (int i = 0; i < M; i++)
-//         {
-//             if (request[i] > AvailableRes[i])
-//             {
-//                 // Block the thread
-//                 state[this_tid] = 2;
-//                 pthread_cond_wait(&conds[this_tid],&lock);
-//                 // Try again
-//                 pthread_mutex_unlock(&lock);
-//                 rm_request(request);
-//                 return -1;
-//             }
-//         }
-
-//         // Try to allocate the resources
-//         for (int i = 0; i < M; i++)
-//         {
-//             AvailableRes[i] -= request[i];
-//             Allocation[this_tid][i] += request[i];
-//             Need[this_tid][i] -= request[i];
-//             RequestRes[this_tid][i] = request[i];
-//         }
-
-//         // Check if the new state is safe
-//         int is_safe = 1;
-//         int work[M];
-//         int finish[N];
-//         for (int i = 0; i < M; i++)
-//         {
-//             work[i] = AvailableRes[i];
-//         }
-//         for (int i = 0; i < N; i++)
-//         {
-//             finish[i] = 0;
-//         }
-//         int count = 0;
-//         while (count < N)
-//         {
-//             int found = 0;
-//             for (int i = 0; i < N; i++)
-//             {
-//                 if (finish[i] == 0)
-//                 {
-//                     int j;
-//                     for (j = 0; j < M; j++)
-//                     {
-//                         if (Need[i][j] > work[j])
-//                         {
-//                             break;
-//                         }
-//                     }
-//                     if (j == M)
-//                     {
-//                         found = 1;
-//                         finish[i] = 1;
-//                         count++;
-//                         for (j = 0; j < M; j++)
-//                         {
-//                             work[j] += Allocation[i][j];
-//                         }
-//                     }
-//                 }
-//             }
-//             if (found == 0)
-//             {
-//                 is_safe = 0;
-//                 break;
-//             }
-//         }
-
-//         if (is_safe)
-//         {
-//             // If the new state is safe, grant the resources
-//             state[this_tid] = 1;
-//             for (int i = 0; i < M; i++)
-//             {
-//                 RequestRes[this_tid][i] = 0;
-//             }
-//             pthread_mutex_unlock(&lock); // release the lock before returning
-//             return 0;
-//         }
-//         else
-//         {
-//             // If the new state is not safe, revert the changes
-//             for (int i = 0; i < M; i++)
-//             {
-//                 AvailableRes[i] += request[i];
-//                 Allocation[this_tid][i] -= request[i];
-//                 Need[this_tid][i] += request[i];
-//             }
-//             pthread_mutex_unlock(&lock); // release the lock before returning
-//             return -1;
-//         }
-
-//     }
-//     else
-//     {
-//         // Check if the request can be granted
-//         for (int i = 0; i < M; i++)
-//         {
-//             if (request[i] > AvailableRes[i])
-//             {
-//                 // Block the thread
-//                 state[this_tid] = 2;
-//                 pthread_cond_wait(&conds[this_tid],&lock);
-//                 pthread_mutex_unlock(&lock); // release the lock before returning
-//                 state[this_tid] = 1;
-//                 rm_request(request);
-//                 return 0;
-//             }
-//         }
-
-//         // Allocate the resources
-//         for (int i = 0; i < M; i++)
-//         {
-//             AvailableRes[i] -= request[i];
-//             Allocation[this_tid][i] += request[i];
-//             Need[this_tid][i] -= request[i];
-//         }
-
-//         state[this_tid] = 1;
-//         pthread_mutex_unlock(&lock); // release the lock before returning
-//         return 0;
-//     }
-
-// }
-
-
 int rm_request(int request[]) {
     int can_request = 1;
     int this_tid = -1;
@@ -346,6 +176,7 @@ int rm_request(int request[]) {
             Allocation[this_tid][i] += request[i];
             Need[this_tid][i] -= request[i];
             AvailableRes[i] -= request[i];
+            printf("Trying to allocate %d instances of resource %d to thread %d\n", request[i], i, this_tid);
         }
 
         int work[M];
@@ -390,6 +221,7 @@ int rm_request(int request[]) {
         // if the new state is safe, grant the resources
         if (found == N) 
         {
+            printf("The new state is safe, resources allocated\n");
             pthread_mutex_unlock(&lock);
             return 0;
         } 
@@ -402,6 +234,7 @@ int rm_request(int request[]) {
                 Need[this_tid][i] += request[i];
                 AvailableRes[i] += request[i];
             }
+            printf("The new state is not safe, resources not allocated\n");
             // if the new state is not safe, block the thread
             state[this_tid] = 2;
             for (int i = 0; i < M; i++) 
@@ -448,27 +281,35 @@ int rm_request(int request[]) {
     }
 
     // if request can be granted immediately, allocate resources and return
-    if (can_request) {
-        for (int i = 0; i < M; i++) {
+    if (can_request) 
+    {
+        for (int i = 0; i < M; i++) 
+        {
             AvailableRes[i] -= request[i];
             Allocation[this_tid][i] += request[i];
             Need[this_tid][i] -= request[i];
         }
-
+        printf("Resources allocated, to thread %d\n", this_tid);
         pthread_mutex_unlock(&lock);
         return 0;
     }
 
     // if request cannot be granted immediately, block until resources are available
     state[this_tid] = 2; // blocked
-    memcpy(RequestRes[this_tid], request, sizeof(int) * M);
-
-    while (!can_request) {
+    for (int i = 0; i < M; i++) 
+    {
+        RequestRes[this_tid][i] = request[i];
+    }
+    printf("Thread %d blocked\n", this_tid);
+    while (!can_request) 
+    {
         pthread_cond_wait(&conds[this_tid], &lock);
 
         can_request = 1;
-        for (int i = 0; i < M; i++) {
-            if (RequestRes[this_tid][i] > AvailableRes[i]) {
+        for (int i = 0; i < M; i++) 
+        {
+            if (RequestRes[this_tid][i] > AvailableRes[i]) 
+            {
                 can_request = 0;
                 break;
             }
@@ -476,68 +317,21 @@ int rm_request(int request[]) {
     }
 
     // allocate resources and unblock
-    for (int i = 0; i < M; i++) {
+    for (int i = 0; i < M; i++) 
+    {
         AvailableRes[i] -= RequestRes[this_tid][i];
         Allocation[this_tid][i] += RequestRes[this_tid][i];
         Need[this_tid][i] -= RequestRes[this_tid][i];
         RequestRes[this_tid][i] = 0;
     }
+    printf("Resources allocated, thread %d unblocked\n", this_tid);
 
     return 0;
 }
 
 
-
-// int rm_release(int release[]) {
-//     int this_tid = -1;
-//     for (int i = 0; i < N; i++)
-//     {
-//         if (tids[i] == pthread_self())
-//         {
-//             this_tid = i;
-//             break;
-//         }
-//     }
-//     if (this_tid == -1)
-//     {
-//         printf("Error: thread not found\n");
-//         return -1; // thread ID not found
-//     }
-
-//     pthread_mutex_lock(&lock);
-
-//     for (int i = 0; i < M; i++) 
-//     {
-//         if (release[i] > Allocation[this_tid][i]) 
-//         {
-//             printf("Error: cannot release more resources than allocated\n");
-//             pthread_mutex_unlock(&lock);
-//             return -1;
-//         }
-//         else 
-//         {
-//             AvailableRes[i] += release[i];
-//             Allocation[this_tid][i] -= release[i];
-//             Need[this_tid][i] += release[i];
-//         }
-//     }
-
-//     // Signal any threads waiting for resources
-//     for (int i = 0; i < N; i++) 
-//     {
-//         if (i != this_tid && state[i] == 2) 
-//         {
-//             pthread_cond_signal(&conds[i]);
-//         }
-//     }
-
-//     pthread_mutex_unlock(&lock);
-
-//     return 0;
-// }
-
-
-int rm_release(int release[]) {
+int rm_release(int release[]) 
+{
     int this_tid = -1;
 
     for (int i = 0; i < N; i++) 
@@ -551,37 +345,46 @@ int rm_release(int release[]) {
     pthread_mutex_lock(&lock); // acquire the lock to ensure mutual exclusion
     
     // check if the thread is active or blocked
-    if (state[this_tid] != 1) {
+    if (state[this_tid] != 1) 
+    {
         pthread_mutex_unlock(&lock);
         return -1; // return -1 if the thread is not active
     }
     
     // check if the thread has allocated the resources it wants to release
-    for (int i = 0; i < M; i++) {
-        if (release[i] > Allocation[this_tid][i]) {
+    for (int i = 0; i < M; i++) 
+    {
+        if (release[i] > Allocation[this_tid][i]) 
+        {
             pthread_mutex_unlock(&lock);
             return -1; // return -1 if the thread is trying to release more than allocated
         }
     }
     
     // release the resources
-    for (int i = 0; i < M; i++) {
+    for (int i = 0; i < M; i++)
+    {
         Allocation[this_tid][i] -= release[i];
         AvailableRes[i] += release[i];
         Need[this_tid][i] += release[i];
     }
-    
+    printf("Resources released, thread %d\n", this_tid);
     // check if any blocked threads can be unblocked
-    for (int i = 0; i < N; i++) {
-        if (state[i] == 2) {
+    for (int i = 0; i < N; i++) 
+    {
+        if (state[i] == 2) 
+        {
             int can_allocate = 1;
-            for (int j = 0; j < M; j++) {
-                if (RequestRes[i][j] > AvailableRes[j]) {
+            for (int j = 0; j < M; j++) 
+            {
+                if (RequestRes[i][j] > AvailableRes[j]) 
+                {
                     can_allocate = 0;
                     break;
                 }
             }
             if (can_allocate) {
+                printf("Thread %d unblocked\n", i);
                 state[i] = 1; // unblock the thread
                 pthread_cond_signal(&conds[i]); // signal the thread
             }
@@ -593,82 +396,26 @@ int rm_release(int release[]) {
 }
 
 
-
-// int rm_detection()
-// {
-//     int work[M];
-//     int finish[N];
-//     int deadlock = 0;
-
-//     pthread_mutex_lock(&lock);
-
-//     // Initialize work and finish arrays
-//     for (int i = 0; i < M; i++)
-//     {
-//         work[i] = AvailableRes[i];
-//     }
-//     for (int i = 0; i < N; i++)
-//     {
-//         finish[i] = 0;
-//     }
-
-//     // Detect deadlocks using the Banker's algorithm
-//     int count = 0;
-
-//     while (count < N)
-//     {
-//         int found = 0;
-//         for (int i = 0; i < N; i++)
-//         {
-//             if (finish[i] == 0)
-//             {
-//                 int j;
-//                 for (j = 0; j < M; j++)
-//                 {
-//                     if (Need[i][j] > work[j])
-//                     {
-//                         break;
-//                     }
-//                 }
-//                 if (j == M)
-//                 {
-//                     found = 1;
-//                     finish[i] = 1;
-//                     count++;
-//                     for (j = 0; j < M; j++)
-//                     {
-//                         work[j] += Allocation[i][j];
-//                     }
-//                 }
-//             }
-//         }
-//         if (found == 0)
-//         {
-//             deadlock++;
-//         }
-//     }
-
-//     pthread_mutex_unlock(&lock);
-//     return deadlock;
-
-// }
-
-
-int rm_detection() {
+int rm_detection()
+{
     pthread_mutex_lock(&lock); // acquire the lock to ensure mutual exclusion
     
     // Initialize the needed matrices for Banker's algorithm
     int Finish[N];
-    for (int i = 0; i < N; i++) {
+    for (int i = 0; i < N; i++) 
+    {
         Finish[i] = 0;
     }
     int Work[M];
-    for (int i = 0; i < M; i++) {
+    for (int i = 0; i < M; i++) 
+    {
         Work[i] = AvailableRes[i];
     }
     int Need_copy[N][M];
-    for (int i = 0; i < N; i++) {
-        for (int j = 0; j < M; j++) {
+    for (int i = 0; i < N; i++) 
+    {
+        for (int j = 0; j < M; j++) 
+        {
             Need_copy[i][j] = Need[i][j];
         }
     }
@@ -677,18 +424,25 @@ int rm_detection() {
     int deadlock_count = 0;
     int safe_sequence[N];
     int safe_index = 0;
-    for (int count = 0; count < N; count++) {
+    for (int count = 0; count < N; count++) 
+    {
         int found = 0;
-        for (int i = 0; i < N; i++) {
-            if (Finish[i] == 0) {
+        for (int i = 0; i < N; i++) 
+        {
+            if (Finish[i] == 0) 
+            {
                 int j;
-                for (j = 0; j < M; j++) {
-                    if (Need_copy[i][j] > Work[j]) {
+                for (j = 0; j < M; j++) 
+                {
+                    if (Need_copy[i][j] > Work[j]) 
+                    {
                         break;
                     }
                 }
-                if (j == M) {
-                    for (int k = 0; k < M; k++) {
+                if (j == M) 
+                {
+                    for (int k = 0; k < M; k++) 
+                    {
                         Work[k] += Allocation[i][k];
                     }
                     Finish[i] = 1;
@@ -697,100 +451,24 @@ int rm_detection() {
                 }
             }
         }
-        if (!found) {
+        if (!found) 
+        {
             break;
         }
     }
     
     // check if a deadlock has been detected
-    if (safe_index != N) {
+    if (safe_index != N) 
+    {
         deadlock_count = N - safe_index;
     }
     
     pthread_mutex_unlock(&lock); // release the lock
     
     // return the number of deadlocked processes
-    if (deadlock_count > 0) {
-        return deadlock_count;
-    } else {
-        return 0;
-    }
+    return deadlock_count;
+        
 }
-
-
-
-// int rm_detection()
-// {
-//     int D = 0;
-//     int tempR[MAXR];
-//     int tempP[MAXP];
-
-//     pthread_mutex_lock(&lock);
-
-//     // Initialize tempR, tempP arrays
-//     for (int j = 0; j < M; j++)
-//     {
-//         tempR[j] = AvailableRes[j];
-//         tempP[j] = 0;
-//     }
-
-//     // Detect deadlocks using the Banker's algorithm
-//     int finished = 0;
-//     while (!finished)
-//     {
-//         finished = 1;
-//         for (int i = 0; i < N; i++)
-//         {
-//             if (tempP[i] == 0)
-//             {
-//                 int canAllocate = 1;
-//                 for (int j = 0; j < M; j++)
-//                 {
-//                     if (RequestRes[i][j] > tempR[j])
-//                     {
-//                         canAllocate = 0;
-//                         break;
-//                     }
-//                 }
-//                 if (canAllocate)
-//                 {
-//                     for (int j = 0; j < M; j++)
-//                     {
-//                         tempR[j] += Allocation[i][j];
-//                     }
-//                     tempP[i] = 1;
-//                     finished = 0;
-//                 }
-//                 else
-//                 {
-//                     // Wait for other threads to release resources
-//                     state[i] = 2;
-//                     pthread_cond_wait(&conds[i], &lock);
-//                     state[i] = 1;
-
-//                 }
-//             }
-//         }
-//     }
-
-//     pthread_mutex_unlock(&lock);
-
-//     // Count the number of deadlocks
-//     for (int i = 0; i < N; i++)
-//     {
-//         if(tempP[i] == 0 )
-//         {
-//             printf("Deadlock Detected!\n");
-//             D++;
-//         }
-//         else
-//         {
-//             printf("There is no deadlock detected!\n");
-//         }
-//     }
-    
-//     return D;
-// }
 
 
 void rm_print_state (char hmsg[])
