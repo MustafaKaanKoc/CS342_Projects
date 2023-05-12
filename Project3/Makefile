@@ -7,7 +7,8 @@ librm.a:  rm.c
 	ranlib librm.a
 
 app: myapp.c
-	gcc -Wall -o app myapp.c -L. -lrm -lpthread
+	gcc -Wall -o myapp myapp.c -L. -lrm -lpthread
+	gcc -Wall -o app_default app.c -L. -lrm -lpthread
 
 clean: 
-	rm -fr *.o *.a *~ a.out  app rm.o rm.a librm.a
+	rm -fr *.o *.a *~ a.out app_default myapp rm.o rm.a librm.a

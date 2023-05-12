@@ -6,11 +6,11 @@
 #include <stdarg.h>
 #include "rm.h"
 
-#define NUMR 2    // number of resource types
+#define NUMR 1        // number of resource types
 #define NUMP 2        // number of threads
 
 int AVOID = 1;
-int exist[2] =  {8, 8};  // resources existing in the system
+int exist[1] =  {8};  // resources existing in the system
 
 void pr (int tid, char astr[], int m, int r[])
 {
@@ -50,19 +50,16 @@ void *threadfunc1 (void *a)
     tid = *((int*)a);
     rm_thread_started (tid);
 
-    claim[0] = 5;
-    claim[1] = 6;
+    setarray(claim, NUMR, 8);
     rm_claim (claim);
     
-    request1[0] = 2;
-    request1[1] = 3;
+    setarray(request1, NUMR, 5);
     pr (tid, "REQ", NUMR, request1);
     rm_request (request1);
 
     sleep(4);
 
-    request2[0] = 3;
-    request2[1] = 3;
+    setarray(request2, NUMR, 3);
     pr (tid, "REQ", NUMR, request2);
     rm_request (request2);
 
@@ -84,19 +81,16 @@ void *threadfunc2 (void *a)
     tid = *((int*)a);
     rm_thread_started (tid);
 
-    claim[0] = 3;
-    claim[1] = 3;
+    setarray(claim, NUMR, 8);
     rm_claim (claim);
 
-    request1[0] = 1;
-    request1[1] = 1;
+    setarray(request1, NUMR, 2);
     pr (tid, "REQ", NUMR, request1);
     rm_request (request1);
 
     sleep(2);
     
-    request2[0] = 2;
-    request2[1] = 2;
+    setarray(request2, NUMR, 4);
     pr (tid, "REQ", NUMR, request2);
     rm_request (request2);
 
@@ -123,7 +117,6 @@ int main(int argc, char **argv)
 
     AVOID = atoi (argv[1]);
     
-
     if (AVOID == 1)
         rm_init (NUMP, NUMR, exist, 1);
     else
@@ -135,8 +128,7 @@ int main(int argc, char **argv)
                     (void *) threadfunc1, (void *)
                     (void*)&tids[i]);
     
-    i = 1;  // we select a tid for the thread    int ret = 0;
-
+    i = 1;  // we select a tid for the thread
     tids[i] = i;
     pthread_create (&(threadArray[i]), NULL,
                     (void *) threadfunc2, (void *)
@@ -161,3 +153,5 @@ int main(int argc, char **argv)
         }
     }
 }
+
+
